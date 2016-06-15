@@ -72,12 +72,16 @@ namespace AIBTViewer
             foreach (var child in e.Node.Nodes.Cast<TreeNode>())
             {
                 if (child.Nodes.Count == 0)
-                    Expand(child, (BTPath)child.Tag);
+                {
+                    var btPath = (BTPath) child.Tag;
+                    if (Analyzer.ShouldShow(btPath))
+                        Expand(child, btPath);
+                }
             }
             behaviorTreeView.EndUpdate();
         }
 
-        private static void Expand(TreeNode node, BTPath btPath)
+        private void Expand(TreeNode node, BTPath btPath)
         {
             var behavior = btPath.Path[btPath.Path.Count - 1];
             foreach (var child in behavior.TypeLink.OrderBy(n => n.BehaviorName))
@@ -92,15 +96,25 @@ namespace AIBTViewer
             }
         }
 
-        private static TreeNode AddNode(BTPath btPath, Behavior behavior, TreeNodeCollection treeNodeCollection, string param = null)
+        private TreeNode AddNode(BTPath btPath, Behavior behavior, TreeNodeCollection treeNodeCollection, string param = null)
         {
+            var font = behaviorTreeView.Font;
+            var nodeLabel = NodeLabel(behavior, param);
+
+            var newBehavior = Analyzer.HideNodes(btPath, behavior);
+            if (newBehavior != behavior)
+            {
+                behavior = newBehavior;
+                nodeLabel = NodeLabel(behavior, param);
+            }
+
             var newBTPath = new BTPath();
             newBTPath.Path = new List<Behavior>();
             if (btPath.Path != null)
                 newBTPath.Path.AddRange(btPath.Path);
             newBTPath.Path.Add(behavior);
 
-            var newNode = treeNodeCollection.Add(behavior.Key, NodeLabel(behavior, param));
+            var newNode = treeNodeCollection.Add(behavior.Key, nodeLabel);
             newNode.Tag = newBTPath;
 
             if (behavior.Annotations.Contains("HasSelectAbility"))
@@ -116,6 +130,11 @@ namespace AIBTViewer
             }
             else
                 newNode.ForeColor = Color.Blue;
+
+            if (!Analyzer.ShouldShow(newBTPath))
+                font = new Font(font, FontStyle.Strikeout);
+
+            newNode.NodeFont = font;
 
             return newNode;
         }
@@ -137,8 +156,7 @@ namespace AIBTViewer
             var config = new ConfigParser();
             BT = config.ReadData(layerPaths);
 
-            var analyzer = new Analyzer();
-            analyzer.Analyze(BT);
+            Analyzer.Analyze(BT);
         }
 
         private void BTViewer_Layout(object sender, LayoutEventArgs e)
