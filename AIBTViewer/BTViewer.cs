@@ -12,6 +12,11 @@ using System.Windows.Forms;
 
 namespace AIBTViewer
 {
+    struct BTPath
+    {
+        public List<Behavior> Path;
+    }
+
     public partial class BTViewer : Form
     {
         public BTViewer()
@@ -43,8 +48,11 @@ namespace AIBTViewer
             behaviorTreeView.Nodes.Clear();
             foreach (var root in BT.Roots())
             {
-                var newNode = AddNode(root, behaviorTreeView.Nodes);
-                Expand(newNode, root);
+                var btPath = new BTPath();
+                btPath.Path = new List<Behavior>();
+                var newNode = AddNode(btPath, root, behaviorTreeView.Nodes);
+                btPath.Path.Add(root);
+                Expand(newNode, btPath);
             }
             behaviorTreeView.EndUpdate();
         }
@@ -64,29 +72,36 @@ namespace AIBTViewer
             foreach (var child in e.Node.Nodes.Cast<TreeNode>())
             {
                 if (child.Nodes.Count == 0)
-                    Expand(child, (Behavior)child.Tag);
+                    Expand(child, (BTPath)child.Tag);
             }
             behaviorTreeView.EndUpdate();
         }
 
-        private static void Expand(TreeNode node, Behavior behavior)
+        private static void Expand(TreeNode node, BTPath btPath)
         {
-                        foreach (var child in behavior.TypeLink.OrderBy(n => n.BehaviorName))
+            var behavior = btPath.Path[btPath.Path.Count - 1];
+            foreach (var child in behavior.TypeLink.OrderBy(n => n.BehaviorName))
             {
-                AddNode(child, node.Nodes);
+                AddNode(btPath, child, node.Nodes);
             }
 
             for (int i = 0; i < behavior.ChildLink.Count; i++)
             {
                 var child = behavior.ChildLink[i];
-                AddNode(child, node.Nodes, i < behavior.Param.Count ? behavior.Param[i] : null);
+                AddNode(btPath, child, node.Nodes, i < behavior.Param.Count ? behavior.Param[i] : null);
             }
         }
 
-        private static TreeNode AddNode(Behavior behavior, TreeNodeCollection treeNodeCollection, string param = null)
+        private static TreeNode AddNode(BTPath btPath, Behavior behavior, TreeNodeCollection treeNodeCollection, string param = null)
         {
+            var newBTPath = new BTPath();
+            newBTPath.Path = new List<Behavior>();
+            if (btPath.Path != null)
+                newBTPath.Path.AddRange(btPath.Path);
+            newBTPath.Path.Add(behavior);
+
             var newNode = treeNodeCollection.Add(behavior.Key, NodeLabel(behavior, param));
-            newNode.Tag = behavior;
+            newNode.Tag = newBTPath;
 
             if (behavior.Annotations.Contains("HasSelectAbility"))
                 newNode.ForeColor = Color.Black;
