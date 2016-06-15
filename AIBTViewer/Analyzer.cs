@@ -66,7 +66,7 @@ namespace AIBTViewer
         static readonly List<string> UpdateAbilities = new List<string>
         {
             "updatebesttarget", "updatebestalertdata",
-            "settargetstack", "setalertdatastack",
+            "settargetstack", "setpotentialtargetstack", "setalertdatastack",
             "setnexttarget", "setnextalertdata"
         };
 
