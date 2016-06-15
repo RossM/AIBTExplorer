@@ -145,7 +145,7 @@ namespace AIBTViewer
 
                 if (!isLast)
                 {
-                    if (behavior.NodeType.ToLowerInvariant() == "selector")
+                    if (behavior.NodeType.ToLowerInvariant() == "selector" && !behavior.TypeLink.Contains(btPath.Path[index + 1]))
                     {
                         foreach (var child in behavior.ChildLink)
                         {
@@ -156,7 +156,7 @@ namespace AIBTViewer
                         }
                     }
 
-                    if (behavior.NodeType.ToLowerInvariant() == "sequence")
+                    if (behavior.NodeType.ToLowerInvariant() == "sequence" && !behavior.TypeLink.Contains(btPath.Path[index + 1]))
                     {
                         foreach (var child in behavior.ChildLink)
                         {
