@@ -74,8 +74,8 @@ namespace AIBTViewer
                 if (child.Nodes.Count == 0)
                 {
                     var btPath = (BTPath) child.Tag;
-                    if (Analyzer.ShouldShow(btPath))
-                        Expand(child, btPath);
+                    // if (Analyzer.ShouldShow(btPath))
+                    Expand(child, btPath);
                 }
             }
             behaviorTreeView.EndUpdate();
@@ -99,21 +99,11 @@ namespace AIBTViewer
         private TreeNode AddNode(BTPath btPath, Behavior behavior, TreeNodeCollection treeNodeCollection, string param = null)
         {
             var font = behaviorTreeView.Font;
+
+            var newBTPath = ExtendPath(btPath, behavior);
+            behavior = newBTPath.Path[newBTPath.Path.Count - 1];
+
             var nodeLabel = NodeLabel(behavior, param);
-
-            var newBehavior = Analyzer.HideNodes(btPath, behavior);
-            if (newBehavior != behavior)
-            {
-                behavior = newBehavior;
-                nodeLabel = NodeLabel(behavior, param);
-            }
-
-            var newBTPath = new BTPath();
-            newBTPath.Path = new List<Behavior>();
-            if (btPath.Path != null)
-                newBTPath.Path.AddRange(btPath.Path);
-            newBTPath.Path.Add(behavior);
-
             var newNode = treeNodeCollection.Add(behavior.Key, nodeLabel);
             newNode.Tag = newBTPath;
 
@@ -137,6 +127,24 @@ namespace AIBTViewer
             newNode.NodeFont = font;
 
             return newNode;
+        }
+
+        private static BTPath ExtendPath(BTPath btPath, Behavior behavior)
+        {
+            var newBTPath = new BTPath { Path = new List<Behavior>() };
+            if (btPath.Path != null)
+                newBTPath.Path.AddRange(btPath.Path);
+            newBTPath.Path.Add(behavior);
+
+            while (true)
+            {
+                var newBehavior = Analyzer.HideNodes(btPath, behavior);
+                if (newBehavior == null)
+                    return newBTPath;
+
+                behavior = newBehavior;
+                newBTPath.Path.Add(behavior);
+            }
         }
 
         private static string NodeLabel(Behavior child, string param = null)
