@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,21 +20,27 @@ namespace AIBTViewer
         }
 
         private BehaviorTree BT;
-        private volatile bool configLoaded;
-
+        private List<string> layerPaths = new List<string>(); 
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
 
-            Task.Run(new System.Action(ParseConfig));
-
-            while (!configLoaded)
-                Thread.Sleep(100);
+            layerPaths.Add(@"C:\Program Files (x86)\Steam\SteamApps\common\XCOM 2\XComGame\Config\DefaultAI.ini");
 
             behaviorTreeView.BeforeExpand += behaviorTreeView_BeforeExpand;
 
+            UpdateLayersListBox();
+
+            Task.Run(new System.Action(ParseConfig)).Wait();
+
+            UpdateBehaviorTreeView();
+        }
+
+        private void UpdateBehaviorTreeView()
+        {
             behaviorTreeView.BeginUpdate();
+            behaviorTreeView.Nodes.Clear();
             foreach (var root in BT.Roots())
             {
                 var newNode = AddNode(root, behaviorTreeView.Nodes);
@@ -42,13 +49,24 @@ namespace AIBTViewer
             behaviorTreeView.EndUpdate();
         }
 
+        private void UpdateLayersListBox()
+        {
+            layersListBox.BeginUpdate();
+            layersListBox.Items.Clear();
+            foreach (var path in layerPaths)
+                layersListBox.Items.Add(path);
+            layersListBox.EndUpdate();
+        }
+
         void behaviorTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
         {
+            behaviorTreeView.BeginUpdate();
             foreach (var child in e.Node.Nodes.Cast<TreeNode>())
             {
                 if (child.Nodes.Count == 0)
                     Expand(child, (Behavior)child.Tag);
             }
+            behaviorTreeView.EndUpdate();
         }
 
         private static void Expand(TreeNode node, Behavior behavior)
@@ -100,13 +118,12 @@ namespace AIBTViewer
 
         private void ParseConfig()
         {
+
             var config = new ConfigParser();
-            BT = config.ReadData();
+            BT = config.ReadData(layerPaths);
 
             var analyzer = new Analyzer();
             analyzer.Analyze(BT);
-
-            configLoaded = true;
         }
 
         private void BTViewer_Layout(object sender, LayoutEventArgs e)
@@ -124,6 +141,23 @@ namespace AIBTViewer
         {
             behaviorTreeView.Bounds = mainSplitContainer.Panel1.DisplayRectangle;
 
+        }
+
+        private void addLayerButton_Click(object sender, EventArgs e)
+        {
+            var dialog = new OpenFileDialog();
+            dialog.FileName = "*.ini";
+            var result = dialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                layerPaths.Add(dialog.FileName);
+
+                UpdateLayersListBox();
+
+                Task.Run(new System.Action(ParseConfig)).Wait();
+
+                UpdateBehaviorTreeView();
+            }
         }
 
     }

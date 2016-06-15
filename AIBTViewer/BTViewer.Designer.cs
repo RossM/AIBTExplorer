@@ -37,9 +37,13 @@ namespace AIBTViewer
         {
             this.behaviorTreeView = new System.Windows.Forms.TreeView();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
+            this.removeLayerButton = new System.Windows.Forms.Button();
+            this.addLayerButton = new System.Windows.Forms.Button();
+            this.layersListBox = new System.Windows.Forms.ListBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
+            this.mainSplitContainer.Panel2.SuspendLayout();
             this.mainSplitContainer.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -63,9 +67,40 @@ namespace AIBTViewer
             // 
             // mainSplitContainer.Panel2
             // 
+            this.mainSplitContainer.Panel2.Controls.Add(this.removeLayerButton);
+            this.mainSplitContainer.Panel2.Controls.Add(this.addLayerButton);
+            this.mainSplitContainer.Panel2.Controls.Add(this.layersListBox);
             this.mainSplitContainer.Size = new System.Drawing.Size(952, 471);
             this.mainSplitContainer.SplitterDistance = 316;
             this.mainSplitContainer.TabIndex = 1;
+            // 
+            // removeLayerButton
+            // 
+            this.removeLayerButton.Location = new System.Drawing.Point(12, 36);
+            this.removeLayerButton.Name = "removeLayerButton";
+            this.removeLayerButton.Size = new System.Drawing.Size(103, 23);
+            this.removeLayerButton.TabIndex = 2;
+            this.removeLayerButton.Text = "Remove Layer";
+            this.removeLayerButton.UseVisualStyleBackColor = true;
+            // 
+            // addLayerButton
+            // 
+            this.addLayerButton.Location = new System.Drawing.Point(12, 7);
+            this.addLayerButton.Name = "addLayerButton";
+            this.addLayerButton.Size = new System.Drawing.Size(103, 23);
+            this.addLayerButton.TabIndex = 1;
+            this.addLayerButton.Text = "Add Layer...";
+            this.addLayerButton.UseVisualStyleBackColor = true;
+            this.addLayerButton.Click += new System.EventHandler(this.addLayerButton_Click);
+            // 
+            // layersListBox
+            // 
+            this.layersListBox.FormattingEnabled = true;
+            this.layersListBox.HorizontalScrollbar = true;
+            this.layersListBox.Location = new System.Drawing.Point(121, 7);
+            this.layersListBox.Name = "layersListBox";
+            this.layersListBox.Size = new System.Drawing.Size(466, 69);
+            this.layersListBox.TabIndex = 0;
             // 
             // statusStrip1
             // 
@@ -86,6 +121,7 @@ namespace AIBTViewer
             this.Text = "AIBT Explorer";
             this.Layout += new System.Windows.Forms.LayoutEventHandler(this.BTViewer_Layout);
             this.mainSplitContainer.Panel1.ResumeLayout(false);
+            this.mainSplitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).EndInit();
             this.mainSplitContainer.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -98,6 +134,9 @@ namespace AIBTViewer
         private System.Windows.Forms.TreeView behaviorTreeView;
         private System.Windows.Forms.SplitContainer mainSplitContainer;
         private System.Windows.Forms.StatusStrip statusStrip1;
+        private System.Windows.Forms.Button removeLayerButton;
+        private System.Windows.Forms.Button addLayerButton;
+        private System.Windows.Forms.ListBox layersListBox;
     }
 }
 

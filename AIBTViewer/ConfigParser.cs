@@ -13,92 +13,113 @@ namespace AIBTViewer
         public Dictionary<string, Behavior> BT = new Dictionary<string, Behavior>();
         public List<string> OriginalLines = new List<string>(); 
 
-        public BehaviorTree ReadData()
+        public BehaviorTree ReadData(IEnumerable<string> paths)
         {
-            using (
-                var aiConfig =
-                    File.OpenText(@"C:\Program Files (x86)\Steam\SteamApps\common\XCOM 2\XComGame\Config\DefaultAI.ini")
-                )
+            var rawLines = new List<string>();
+            var cancelledLines = new List<string>();
+
+            foreach (var path in paths)
             {
-                string section = "";
-
-                while (!aiConfig.EndOfStream)
+                using (var aiConfig = File.OpenText(path))
                 {
-                    var line = aiConfig.ReadLine();
-                    var rawLine = line;
 
-                    while (line.EndsWith(@"\\") && !aiConfig.EndOfStream)
+                    while (!aiConfig.EndOfStream)
                     {
-                        line = line.Substring(0, line.Length - 2);
-                        var newLine = aiConfig.ReadLine();
-                        line += newLine;
-                        rawLine += "\n" + newLine;
-                    }
+                        var line = aiConfig.ReadLine();
+                        var rawLine = line;
 
-                    var tokens = LexConfig(line).ToArray();
-                    var tokensLower = tokens.Select(s => s.ToLowerInvariant()).ToArray();
-
-                    if (tokens.Length == 0)
-                    {
-                        OriginalLines.Add(rawLine);
-                        continue;
-                    }
-
-                    if (tokens[0] == "[")
-                    {
-                        OriginalLines.Add(rawLine);
-                        section = string.Join("", tokens);
-                        continue;
-                    }
-
-                    if (tokensLower[0] == "behaviors")
-                    {
-                        var node = new Behavior();
-
-                        int i = 3;
-
-                        while (i < tokens.Length)
+                        while (line.EndsWith(@"\\") && !aiConfig.EndOfStream)
                         {
-                            int index;
-                            switch (tokensLower[i])
-                            {
-                                case "behaviorname":
-                                    node.BehaviorName = tokens[i + 2];
-                                    i += 4;
-                                    break;
-
-                                case "nodetype":
-                                    node.NodeType = tokens[i + 2];
-                                    i += 4;
-                                    break;
-
-                                case "child":
-                                    index = int.Parse(tokens[i + 2]);
-                                    while (node.Child.Count < index + 1)
-                                        node.Child.Add("");
-                                    node.Child[index] = tokens[i + 5];
-                                    i += 7;
-                                    break;
-
-                                case "param":
-                                    index = int.Parse(tokens[i + 2]);
-                                    while (node.Param.Count < index + 1)
-                                        node.Param.Add("");
-                                    node.Param[index] = tokens[i + 5];
-                                    i += 7;
-                                    break;
-
-                                default:
-                                    i++;
-                                    break;
-                            }
+                            line = line.Substring(0, line.Length - 2);
+                            var newLine = aiConfig.ReadLine();
+                            line += newLine;
+                            rawLine += "\n" + newLine;
                         }
 
-                        node.RawText = rawLine;
-                        OriginalLines.Add(string.Format("%{0}", node.BehaviorName));
-
-                        BT[node.BehaviorName.ToLowerInvariant()] = node;
+                        rawLines.Add(rawLine);
                     }
+                }
+            }
+
+            foreach (var rawLine in rawLines)
+            {
+                if (rawLine.StartsWith("-"))
+                {
+                    cancelledLines.Add(rawLine.Substring(1));
+                }
+            }
+
+            string section = "";
+            foreach (var rawLine in rawLines)
+            {
+                var line = rawLine.Replace("\\\\\n", "");
+
+                OriginalLines.Add(rawLine);
+
+                if (line.StartsWith("-"))
+                    continue;
+                if (line.StartsWith("+"))
+                    line = line.Substring(1);
+
+                var tokens = LexConfig(line).ToArray();
+                var tokensLower = tokens.Select(s => s.ToLowerInvariant()).ToArray();
+
+                if (tokens.Length == 0)
+                    continue;
+
+                if (tokens[0] == "[")
+                {
+                    section = string.Join("", tokens);
+                    continue;
+                }
+
+                if (tokensLower[0] == "behaviors" && section.ToLowerInvariant() == "[XComGame.X2AIBTBehaviorTree]".ToLowerInvariant())
+                {
+                    var node = new Behavior();
+
+                    int i = 3;
+
+                    while (i < tokens.Length)
+                    {
+                        int index;
+                        switch (tokensLower[i])
+                        {
+                            case "behaviorname":
+                                node.BehaviorName = tokens[i + 2];
+                                i += 4;
+                                break;
+
+                            case "nodetype":
+                                node.NodeType = tokens[i + 2];
+                                i += 4;
+                                break;
+
+                            case "child":
+                                index = int.Parse(tokens[i + 2]);
+                                while (node.Child.Count < index + 1)
+                                    node.Child.Add("");
+                                node.Child[index] = tokens[i + 5];
+                                i += 7;
+                                break;
+
+                            case "param":
+                                index = int.Parse(tokens[i + 2]);
+                                while (node.Param.Count < index + 1)
+                                    node.Param.Add("");
+                                node.Param[index] = tokens[i + 5];
+                                i += 7;
+                                break;
+
+                            default:
+                                i++;
+                                break;
+                        }
+                    }
+
+                    node.RawText = rawLine;
+                    OriginalLines[OriginalLines.Count - 1] = string.Format("%{0}", node.BehaviorName);
+
+                    BT[node.BehaviorName.ToLowerInvariant()] = node;
                 }
             }
 
