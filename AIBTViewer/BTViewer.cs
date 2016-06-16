@@ -109,8 +109,8 @@ namespace AIBTViewer
 
             if (behavior.Annotations.Contains("HasSelectAbility"))
                 newNode.ForeColor = Color.Black;
-            else if (behavior.Annotations.Contains("HasUpdateBestTarget"))
-                newNode.ForeColor = Color.DarkRed;
+            //else if (behavior.Annotations.Contains("HasUpdateBestTarget"))
+            //    newNode.ForeColor = Color.DarkRed;
             else if (behavior.Annotations.Contains("HasAction"))
             {
                 if (behavior.Annotations.Contains("ConditionValued"))
