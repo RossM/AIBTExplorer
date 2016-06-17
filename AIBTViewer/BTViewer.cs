@@ -25,7 +25,7 @@ namespace AIBTViewer
         }
 
         private BehaviorTree BT;
-        private List<string> layerPaths = new List<string>(); 
+        private List<string> layerPaths = new List<string>();
 
         protected override void OnLoad(EventArgs e)
         {
@@ -46,7 +46,7 @@ namespace AIBTViewer
         {
             behaviorTreeView.BeginUpdate();
             behaviorTreeView.Nodes.Clear();
-            foreach (var root in BT.Roots())
+            foreach (var root in BT.Roots().OrderByDescending(r => PublicRoots.Contains(r.Key)).ThenBy(r => r.Key))
             {
                 var btPath = new BTPath();
                 btPath.Path = new List<Behavior>();
@@ -56,6 +56,13 @@ namespace AIBTViewer
             }
             behaviorTreeView.EndUpdate();
         }
+
+        private string[] PublicRoots = new string[]
+        {
+            "genericairoot",
+            "panickedroot",
+            "genericscamperroot",
+        };
 
         private void UpdateLayersListBox()
         {
@@ -199,6 +206,26 @@ namespace AIBTViewer
 
                 UpdateBehaviorTreeView();
             }
+        }
+
+        private void mainSplitContainer_Panel2_Layout(object sender, LayoutEventArgs e)
+        {
+            layersListBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - layersListBox.Left - 12;
+            behaviorTextBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - behaviorTextBox.Left - 12;
+        }
+
+        private void behaviorTreeView_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            var path = (BTPath) e.Node.Tag;
+            var behavior = path.Path[path.Path.Count - 1];
+
+            var filePathParts = behavior.FileName.Split('\\');
+            var filePathIndex = Math.Max(filePathParts.Length - 2, 0);
+            if (filePathIndex > 0 && filePathParts[filePathIndex].ToLowerInvariant() == "config")
+                filePathIndex--;
+
+            behaviorTextBox.Lines = behavior.RawText.Split('\n');
+            fileNameLabel.Text = filePathParts[filePathIndex];
         }
 
     }

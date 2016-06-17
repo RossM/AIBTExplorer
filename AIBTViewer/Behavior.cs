@@ -13,6 +13,7 @@ namespace AIBTViewer
         public string BehaviorName;
         public string NodeType;
         public string RawText;
+        public string FileName;
         public List<string> Child = new List<string>();
         public List<string> Param = new List<string>();
         public List<Behavior> ChildLink = new List<Behavior>();
