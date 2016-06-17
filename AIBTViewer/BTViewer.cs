@@ -219,6 +219,13 @@ namespace AIBTViewer
             var path = (BTPath) e.Node.Tag;
             var behavior = path.Path[path.Path.Count - 1];
 
+            if (behavior.FileName == null || behavior.RawText == null)
+            {
+                behaviorTextBox.Text = "";
+                fileNameLabel.Text = "<Unknown>";
+                return;
+            }
+
             var filePathParts = behavior.FileName.Split('\\');
             var filePathIndex = Math.Max(filePathParts.Length - 2, 0);
             if (filePathIndex > 0 && filePathParts[filePathIndex].ToLowerInvariant() == "config")
