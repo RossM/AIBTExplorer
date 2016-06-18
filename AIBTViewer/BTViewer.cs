@@ -235,5 +235,39 @@ namespace AIBTViewer
             fileNameLabel.Text = filePathParts[filePathIndex];
         }
 
+        private void refreshButton_Click(object sender, EventArgs e)
+        {
+            var path = behaviorTreeView.SelectedNode != null ? (BTPath)behaviorTreeView.SelectedNode.Tag : new BTPath();
+            
+            Task.Run(new System.Action(ParseConfig)).Wait();
+
+            UpdateBehaviorTreeView();
+
+            if (path.Path != null)
+            {
+                var subPath = new BTPath() { Path = new List<Behavior>() };
+
+                var nodeCollection = behaviorTreeView.Nodes;
+                TreeNode selectedNode = null;
+                foreach (var behavior in path.Path)
+                {
+                    var node = nodeCollection[behavior.Key];
+                    if (node == null)
+                        break;
+                    var nodePath = (BTPath) node.Tag;
+                    subPath.Path.Add(nodePath.Path[nodePath.Path.Count - 1]);
+
+                    selectedNode = node;
+                    nodeCollection = node.Nodes;
+                    Expand(node, subPath);
+                }
+
+                behaviorTreeView.SelectedNode = selectedNode;
+                if (selectedNode != null)
+                    selectedNode.Expand();
+                behaviorTreeView.Select();
+            }
+        }
+
     }
 }
