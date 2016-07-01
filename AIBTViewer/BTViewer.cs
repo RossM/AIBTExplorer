@@ -46,7 +46,7 @@ namespace AIBTViewer
         {
             behaviorTreeView.BeginUpdate();
             behaviorTreeView.Nodes.Clear();
-            foreach (var root in BT.Roots().OrderByDescending(r => PublicRoots.Contains(r.Key)).ThenBy(r => r.Key))
+            foreach (var root in BT.Roots().Union(PublicRoots.Select(r => BT.Tree[r])).OrderByDescending(r => PublicRoots.Contains(r.Key)).ThenBy(r => r.Key))
             {
                 var btPath = new BTPath();
                 btPath.Path = new List<Behavior>();
