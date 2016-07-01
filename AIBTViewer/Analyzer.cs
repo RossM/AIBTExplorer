@@ -46,7 +46,7 @@ namespace AIBTViewer
 
             foreach (var behavior in behaviors)
             {
-                var typeLower = behavior.NodeType.ToLowerInvariant();
+                var typeLower = behavior.NodeType != null ? behavior.NodeType.ToLowerInvariant() : "unknown";
                 var nameLower = behavior.BehaviorName.ToLowerInvariant();
 
                 if (typeLower == "action")

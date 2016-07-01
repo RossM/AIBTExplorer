@@ -27,7 +27,7 @@ namespace AIBTViewer.Properties {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute(@"<?xml version=""1.0"" encoding=""utf-16""?>
 <ArrayOfString xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">
-  <string>C:\Program Files (x86)\Steam\SteamApps\common\XCOM 2\XComGame\Config\DefaultAI.ini</string>
+  <string>1|C:\Program Files (x86)\Steam\SteamApps\common\XCOM 2\XComGame\Config\DefaultAI.ini</string>
 </ArrayOfString>")]
         public global::System.Collections.Specialized.StringCollection Layers {
             get {

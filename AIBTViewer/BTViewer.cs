@@ -18,6 +18,12 @@ namespace AIBTViewer
         public List<Behavior> Path;
     }
 
+    class LayerInfo
+    {
+        public string Path;
+        public bool Enabled;
+    }
+
     public partial class BTViewer : Form
     {
         public BTViewer()
@@ -26,17 +32,22 @@ namespace AIBTViewer
         }
 
         private BehaviorTree BT;
-        private List<string> layerPaths = new List<string>();
+        private List<LayerInfo> layers = new List<LayerInfo>(); 
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
 
-            layerPaths.AddRange(Properties.Settings.Default.Layers.Cast<string>());
+            foreach (string layerProp in Properties.Settings.Default.Layers)
+            {
+                var parts = layerProp.Split(new []{'|'}, 2);
+                if (parts.Length == 2)
+                    layers.Add(new LayerInfo { Enabled = (parts[0] == "1"), Path = parts[1] });
+            }
 
             behaviorTreeView.BeforeExpand += behaviorTreeView_BeforeExpand;
 
-            UpdateLayersListBox();
+            UpdateLayersTreeView();
 
             Task.Run(new System.Action(ParseConfig)).Wait();
 
@@ -74,13 +85,18 @@ namespace AIBTViewer
             "genericscamperroot",
         };
 
-        private void UpdateLayersListBox()
+        private void UpdateLayersTreeView()
         {
-            layersListBox.BeginUpdate();
-            layersListBox.Items.Clear();
-            foreach (var path in layerPaths)
-                layersListBox.Items.Add(path);
-            layersListBox.EndUpdate();
+            layersTreeView.BeginUpdate();
+            layersTreeView.Nodes.Clear();
+            foreach (var layer in layers)
+            {
+                TreeNode node = new TreeNode(FileShortName(layer.Path));
+                node.ToolTipText = layer.Path;
+                node.Checked = layer.Enabled;
+                layersTreeView.Nodes.Add(node);
+            }
+            layersTreeView.EndUpdate();
         }
 
         void behaviorTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
@@ -179,7 +195,7 @@ namespace AIBTViewer
         {
 
             var config = new ConfigParser();
-            BT = config.ReadData(layerPaths);
+            BT = config.ReadData(layers.Where(l => l.Enabled).Select(l => l.Path));
 
             Analyzer.Analyze(BT);
         }
@@ -203,12 +219,11 @@ namespace AIBTViewer
 
         private void addLayerButton_Click(object sender, EventArgs e)
         {
-            var dialog = new OpenFileDialog();
-            dialog.FileName = "*.ini";
+            var dialog = new OpenFileDialog { FileName = "*.ini" };
             var result = dialog.ShowDialog();
             if (result == DialogResult.OK)
             {
-                layerPaths.Add(dialog.FileName);
+                layers.Add(new LayerInfo { Enabled = true, Path = dialog.FileName });
 
                 LayerPathsChanged();
             }
@@ -216,7 +231,7 @@ namespace AIBTViewer
 
         private void mainSplitContainer_Panel2_Layout(object sender, LayoutEventArgs e)
         {
-            layersListBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - layersListBox.Left - 12;
+            layersTreeView.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - layersTreeView.Left - 12;
             behaviorTextBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - behaviorTextBox.Left - 12;
         }
 
@@ -232,13 +247,18 @@ namespace AIBTViewer
                 return;
             }
 
-            var filePathParts = behavior.FileName.Split('\\');
+            behaviorTextBox.Lines = behavior.RawText.Split('\n');
+            fileNameLabel.Text = FileShortName(behavior.FileName);
+        }
+
+        private static string FileShortName(string fileName)
+        {
+            var filePathParts = fileName.Split('\\');
             var filePathIndex = Math.Max(filePathParts.Length - 2, 0);
             if (filePathIndex > 0 && filePathParts[filePathIndex].ToLowerInvariant() == "config")
                 filePathIndex--;
 
-            behaviorTextBox.Lines = behavior.RawText.Split('\n');
-            fileNameLabel.Text = filePathParts[filePathIndex];
+            return filePathParts[filePathIndex];
         }
 
         private void refreshButton_Click(object sender, EventArgs e)
@@ -277,11 +297,11 @@ namespace AIBTViewer
 
         private void removeLayerButton_Click(object sender, EventArgs e)
         {
-            var index = layersListBox.SelectedIndex;
+            var index = layersTreeView.SelectedNode.Index;
 
-            if (index >= 0 && index < layerPaths.Count)
+            if (index >= 0 && index < layers.Count)
             {
-                layerPaths.RemoveAt(index);
+                layers.RemoveAt(index);
 
                 LayerPathsChanged();
             }
@@ -290,14 +310,26 @@ namespace AIBTViewer
         private void LayerPathsChanged()
         {
             Properties.Settings.Default.Layers.Clear();
-            Properties.Settings.Default.Layers.AddRange(layerPaths.ToArray());
+            foreach (var layer in layers)
+            {
+                Properties.Settings.Default.Layers.Add(string.Format("{0}|{1}", layer.Enabled ? 1 : 0, layer.Path));
+            }
             Properties.Settings.Default.Save();
 
-            UpdateLayersListBox();
+            UpdateLayersTreeView();
 
             Task.Run(new System.Action(ParseConfig)).Wait();
 
             UpdateBehaviorTreeView();
+        }
+
+        private void layersTreeView_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            if (layers[e.Node.Index].Enabled != e.Node.Checked)
+            {
+                layers[e.Node.Index].Enabled = e.Node.Checked;
+                LayerPathsChanged();
+            }
         }
     }
 }
