@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -31,7 +32,7 @@ namespace AIBTViewer
         {
             base.OnLoad(e);
 
-            layerPaths.Add(@"C:\Program Files (x86)\Steam\SteamApps\common\XCOM 2\XComGame\Config\DefaultAI.ini");
+            layerPaths.AddRange(Properties.Settings.Default.Layers.Cast<string>());
 
             behaviorTreeView.BeforeExpand += behaviorTreeView_BeforeExpand;
 
@@ -46,13 +47,22 @@ namespace AIBTViewer
         {
             behaviorTreeView.BeginUpdate();
             behaviorTreeView.Nodes.Clear();
-            foreach (var root in BT.Roots().Union(PublicRoots.Select(r => BT.Tree[r])).OrderByDescending(r => PublicRoots.Contains(r.Key)).ThenBy(r => r.Key))
+
+            var rootKeys = new HashSet<string>(BT.Roots().Select(r => r.Key));
+            foreach (var key in PublicRoots)
+                rootKeys.Add(key);
+
+            foreach (var key in rootKeys.OrderByDescending(k => PublicRoots.Contains(k)).ThenBy(k => k))
             {
-                var btPath = new BTPath();
-                btPath.Path = new List<Behavior>();
-                var newNode = AddNode(btPath, root, behaviorTreeView.Nodes);
-                btPath.Path.Add(root);
-                Expand(newNode, btPath);
+                Behavior root;
+                if (BT.Tree.TryGetValue(key, out root))
+                {
+                    var btPath = new BTPath();
+                    btPath.Path = new List<Behavior>();
+                    var newNode = AddNode(btPath, root, behaviorTreeView.Nodes);
+                    btPath.Path.Add(root);
+                    Expand(newNode, btPath);
+                }
             }
             behaviorTreeView.EndUpdate();
         }
@@ -200,11 +210,7 @@ namespace AIBTViewer
             {
                 layerPaths.Add(dialog.FileName);
 
-                UpdateLayersListBox();
-
-                Task.Run(new System.Action(ParseConfig)).Wait();
-
-                UpdateBehaviorTreeView();
+                LayerPathsChanged();
             }
         }
 
@@ -269,5 +275,29 @@ namespace AIBTViewer
             }
         }
 
+        private void removeLayerButton_Click(object sender, EventArgs e)
+        {
+            var index = layersListBox.SelectedIndex;
+
+            if (index >= 0 && index < layerPaths.Count)
+            {
+                layerPaths.RemoveAt(index);
+
+                LayerPathsChanged();
+            }
+        }
+
+        private void LayerPathsChanged()
+        {
+            Properties.Settings.Default.Layers.Clear();
+            Properties.Settings.Default.Layers.AddRange(layerPaths.ToArray());
+            Properties.Settings.Default.Save();
+
+            UpdateLayersListBox();
+
+            Task.Run(new System.Action(ParseConfig)).Wait();
+
+            UpdateBehaviorTreeView();
+        }
     }
 }

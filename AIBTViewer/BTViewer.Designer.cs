@@ -114,13 +114,13 @@ namespace AIBTViewer
             // 
             // removeLayerButton
             // 
-            this.removeLayerButton.Enabled = false;
             this.removeLayerButton.Location = new System.Drawing.Point(12, 36);
             this.removeLayerButton.Name = "removeLayerButton";
             this.removeLayerButton.Size = new System.Drawing.Size(103, 23);
             this.removeLayerButton.TabIndex = 2;
             this.removeLayerButton.Text = "Remove Layer";
             this.removeLayerButton.UseVisualStyleBackColor = true;
+            this.removeLayerButton.Click += new System.EventHandler(this.removeLayerButton_Click);
             // 
             // addLayerButton
             // 
