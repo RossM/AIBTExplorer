@@ -108,9 +108,10 @@ namespace AIBTViewer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.errorListBox.FormattingEnabled = true;
             this.errorListBox.HorizontalScrollbar = true;
+            this.errorListBox.IntegralHeight = false;
             this.errorListBox.Location = new System.Drawing.Point(12, 311);
             this.errorListBox.Name = "errorListBox";
-            this.errorListBox.Size = new System.Drawing.Size(488, 316);
+            this.errorListBox.Size = new System.Drawing.Size(488, 322);
             this.errorListBox.TabIndex = 7;
             this.errorListBox.Visible = false;
             // 
