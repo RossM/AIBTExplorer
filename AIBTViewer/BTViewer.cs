@@ -96,6 +96,8 @@ namespace AIBTViewer
                 foreach (var error in analyzer.Errors)
                     errorListBox.Items.Add(error);
 
+                errorListBox.EndUpdate();
+
                 errorListBox.Show();
                 errorLabel.Show();
             }
