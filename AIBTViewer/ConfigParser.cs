@@ -12,6 +12,9 @@ namespace AIBTViewer
     {
         public Dictionary<string, Behavior> BT = new Dictionary<string, Behavior>();
         public List<FileData> files = new List<FileData>();
+        
+        private string[] lineTokens;
+        private int currentTokenIndex;
 
         public struct FileData
         {
@@ -77,15 +80,15 @@ namespace AIBTViewer
                     if (cancelledLines.Contains(line))
                         continue;
 
-                    var tokens = LexConfig(line).ToArray();
-                    var tokensLower = tokens.Select(s => s.ToLowerInvariant()).ToArray();
+                    lineTokens = LexConfig(line).ToArray();
+                    currentTokenIndex = 0;
 
-                    if (tokens.Length == 0)
+                    if (lineTokens.Length == 0)
                         continue;
 
-                    if (tokens[0] == "[")
+                    if (CurrentToken == "[")
                     {
-                        section = string.Join("", tokens);
+                        section = string.Join("", lineTokens);
                         continue;
                     }
 
@@ -95,47 +98,93 @@ namespace AIBTViewer
                         continue;
                     }
 
-                    if (tokensLower[0] != "behaviors") 
+                    if (CurrentToken.ToLowerInvariant() != "behaviors") 
                         continue;
 
                     var node = new Behavior();
 
-                    int i = 3;
+                    EatToken("behaviors");
+                    EatToken("=");
+                    EatToken("(");
 
-                    while (i < tokens.Length)
+                    while (currentTokenIndex < lineTokens.Length)
                     {
                         int index;
-                        switch (tokensLower[i])
+                        switch (CurrentToken.ToLowerInvariant())
                         {
                             case "behaviorname":
-                                node.BehaviorName = tokens[i + 2];
-                                i += 4;
+                                EatToken();
+                                EatToken("=");
+
+                                node.BehaviorName = CurrentToken;
+                                EatToken();
+
                                 break;
 
                             case "nodetype":
-                                node.NodeType = tokens[i + 2];
-                                i += 4;
+                                EatToken();
+                                EatToken("=");
+
+                                node.NodeType = CurrentToken;
+                                EatToken();
+
                                 break;
 
                             case "child":
-                                index = int.Parse(tokens[i + 2]);
+                                EatToken();
+                                EatToken("[");
+                                
+                                index = int.Parse(CurrentToken);
+                                EatToken();
+
                                 while (node.Child.Count < index + 1)
                                     node.Child.Add("");
-                                node.Child[index] = tokens[i + 5];
-                                i += 7;
+                                
+                                EatToken("]");
+                                EatToken("=");
+
+                                node.Child[index] = CurrentToken;
+                                EatToken();
+
                                 break;
 
                             case "param":
-                                index = int.Parse(tokens[i + 2]);
+                                EatToken();
+                                EatToken("[");
+
+                                index = int.Parse(CurrentToken);
+                                EatToken();
+
                                 while (node.Param.Count < index + 1)
                                     node.Param.Add("");
-                                node.Param[index] = tokens[i + 5];
-                                i += 7;
+                                
+                                EatToken("]");
+                                EatToken("=");
+
+                                node.Param[index] = CurrentToken;
+                                EatToken();
+                                
                                 break;
 
                             default:
-                                i++;
+                                // Unexpected token!
+                                EatToken();
                                 break;
+                        }
+
+                        if (CurrentToken == ")")
+                        {
+                            EatToken();
+                            break;
+                        }
+
+                        EatToken(",", ")");
+
+                        // Allow an optional "," before the closing ")"
+                        if (CurrentToken == ")")
+                        {
+                            EatToken();
+                            break;
                         }
                     }
 
@@ -148,6 +197,24 @@ namespace AIBTViewer
             }
 
             return new BehaviorTree(BT);
+        }
+
+        string CurrentToken
+        {
+            get
+            {
+                return currentTokenIndex >= lineTokens.Length ? null : lineTokens[currentTokenIndex];
+            }
+        }
+
+        void EatToken()
+        {
+            currentTokenIndex++;
+        }
+
+        void EatToken(params string[] expected)
+        {
+            currentTokenIndex++;
         }
 
         static bool IsTokenChar(char c)
