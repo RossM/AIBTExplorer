@@ -77,11 +77,14 @@ namespace AIBTViewer
             }
             behaviorTreeView.EndUpdate();
 
-            if (configParser.Errors.Count > 0)
+            if (configParser.Errors.Count > 0 || analyzer.Errors.Count > 0)
             {
                 errorListBox.BeginUpdate();
                 errorListBox.Items.Clear();
+
                 foreach (var error in configParser.Errors)
+                    errorListBox.Items.Add(error);
+                foreach (var error in analyzer.Errors)
                     errorListBox.Items.Add(error);
 
                 errorListBox.Show();
@@ -102,6 +105,7 @@ namespace AIBTViewer
         };
 
         private ConfigParser configParser;
+        private Analyzer analyzer;
 
         private void UpdateLayersTreeView()
         {
@@ -214,7 +218,8 @@ namespace AIBTViewer
             configParser = new ConfigParser();
             BT = configParser.ReadData(layers.Where(l => l.Enabled).Select(l => l.Path));
 
-            Analyzer.Analyze(BT);
+            analyzer = new Analyzer();
+            analyzer.Analyze(BT);
         }
 
         private void BTViewer_Layout(object sender, LayoutEventArgs e)

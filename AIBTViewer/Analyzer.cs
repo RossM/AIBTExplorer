@@ -8,41 +8,20 @@ namespace AIBTViewer
 {
     class Analyzer
     {
-        static public void Analyze(BehaviorTree behaviorTree)
+        public List<String> Errors = new List<string>(); 
+
+        public void Analyze(BehaviorTree behaviorTree)
         {
-            var behaviors = behaviorTree.Tree.Values.ToArray();
-            foreach (var behavior in behaviors)
-            {
-                foreach (var childName in behavior.Child)
-                {
-                    Behavior child;
-                    if (!behaviorTree.Tree.TryGetValue(childName.ToLowerInvariant(), out child))
-                    {
-                        child = new Behavior();
-                        child.BehaviorName = childName;
-                        if (child.BehaviorName.ToLowerInvariant().StartsWith("addtotargetscore_") || child.BehaviorName.ToLowerInvariant().StartsWith("addtoalertdatascore_"))
-                            child.NodeType = "Action";
-                        else
-                            child.NodeType = "?";
-                        behaviorTree.Tree.Add(childName.ToLowerInvariant(), child);
-                    }
-                    child.Parent.Add(behavior);
-                    behavior.ChildLink.Add(child);
-                }
+            BT = behaviorTree;
 
-                if (behavior.BehaviorName.Contains("::"))
-                {
-                    var typelessName = behavior.BehaviorName.Substring(behavior.BehaviorName.IndexOf("::", StringComparison.InvariantCulture));
-                    Behavior typelessNode;
-                    if (behaviorTree.Tree.TryGetValue(typelessName.ToLowerInvariant(), out typelessNode) && typelessNode != behavior)
-                    {
-                        typelessNode.TypeLink.Add(behavior);
-                        behavior.Parent.Add(typelessNode);
-                    }
-                }
-            }
+            LinkBehaviors();
 
-            behaviors = behaviorTree.Tree.Values.ToArray();
+            AddAnnotations();
+        }
+
+        private void AddAnnotations()
+        {
+            var behaviors = BT.Tree.Values.ToArray();
 
             foreach (var behavior in behaviors)
             {
@@ -63,12 +42,63 @@ namespace AIBTViewer
             }
         }
 
+        private void LinkBehaviors()
+        {
+            var behaviors = BT.Tree.Values.ToArray();
+
+            foreach (var behavior in behaviors)
+            {
+                foreach (var childName in behavior.Child)
+                {
+                    Behavior child;
+                    if (!BT.Tree.TryGetValue(childName.ToLowerInvariant(), out child))
+                    {
+                        child = new Behavior { BehaviorName = childName };
+                        if (child.BehaviorName.ToLowerInvariant().StartsWith("addtotargetscore_") ||
+                            child.BehaviorName.ToLowerInvariant().StartsWith("addtoalertdatascore_"))
+                            child.NodeType = "Action";
+                        else
+                        {
+                            AnalysisError(behavior, string.Format("Missing behavior \"{0}\"", childName));
+                            child.NodeType = "?";
+                        }
+                        BT.Tree.Add(childName.ToLowerInvariant(), child);
+                    }
+                    child.Parent.Add(behavior);
+                    behavior.ChildLink.Add(child);
+                }
+
+                if (behavior.BehaviorName.Contains("::"))
+                {
+                    var typelessName =
+                        behavior.BehaviorName.Substring(behavior.BehaviorName.IndexOf("::", StringComparison.InvariantCulture));
+                    Behavior typelessNode;
+                    if (BT.Tree.TryGetValue(typelessName.ToLowerInvariant(), out typelessNode) && typelessNode != behavior)
+                    {
+                        typelessNode.TypeLink.Add(behavior);
+                        behavior.Parent.Add(typelessNode);
+                    }
+                }
+            }
+        }
+
         static readonly List<string> UpdateAbilities = new List<string>
         {
             "updatebesttarget", "updatebestalertdata",
             "settargetstack", "setpotentialtargetstack", "setalertdatastack",
             "setnexttarget", "setnextalertdata"
         };
+
+        private void AnalysisError(Behavior behavior, string error)
+        {
+            Errors.Add(string.Format("{0} - {1} [{2}] : {3}",
+                behavior.FileName,
+                behavior.OriginalLineNumber + 1,
+                behavior.BehaviorName,
+                error));
+        }
+
+        private BehaviorTree BT;
 
         private static void PropagateAnnotation(Behavior behavior, string annotation)
         {
