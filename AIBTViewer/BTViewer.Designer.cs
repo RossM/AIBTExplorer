@@ -45,11 +45,13 @@ namespace AIBTViewer
             this.behaviorTextBox = new System.Windows.Forms.TextBox();
             this.removeLayerButton = new System.Windows.Forms.Button();
             this.addLayerButton = new System.Windows.Forms.Button();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.mainStatusStrip = new System.Windows.Forms.StatusStrip();
+            this.overviewTooltipStatuslabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
             this.mainSplitContainer.SuspendLayout();
+            this.mainStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // behaviorTreeView
@@ -61,6 +63,7 @@ namespace AIBTViewer
             this.behaviorTreeView.Name = "behaviorTreeView";
             this.behaviorTreeView.Size = new System.Drawing.Size(450, 643);
             this.behaviorTreeView.TabIndex = 0;
+            this.behaviorTreeView.AfterExpand += new System.Windows.Forms.TreeViewEventHandler(this.behaviorTreeView_AfterExpand);
             this.behaviorTreeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.behaviorTreeView_AfterSelect);
             this.behaviorTreeView.Layout += new System.Windows.Forms.LayoutEventHandler(this.behaviorTreeView_Layout);
             // 
@@ -179,20 +182,28 @@ namespace AIBTViewer
             this.addLayerButton.UseVisualStyleBackColor = true;
             this.addLayerButton.Click += new System.EventHandler(this.addLayerButton_Click);
             // 
-            // statusStrip1
+            // mainStatusStrip
             // 
-            this.statusStrip1.Location = new System.Drawing.Point(0, 635);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(962, 22);
-            this.statusStrip1.TabIndex = 2;
-            this.statusStrip1.Text = "statusStrip1";
+            this.mainStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.overviewTooltipStatuslabel});
+            this.mainStatusStrip.Location = new System.Drawing.Point(0, 635);
+            this.mainStatusStrip.Name = "mainStatusStrip";
+            this.mainStatusStrip.Size = new System.Drawing.Size(962, 22);
+            this.mainStatusStrip.TabIndex = 2;
+            this.mainStatusStrip.Text = "statusStrip1";
+            // 
+            // overviewTooltipStatuslabel
+            // 
+            this.overviewTooltipStatuslabel.Name = "overviewTooltipStatuslabel";
+            this.overviewTooltipStatuslabel.Size = new System.Drawing.Size(114, 17);
+            this.overviewTooltipStatuslabel.Text = "overviewStatusLabel";
             // 
             // BTViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(962, 657);
-            this.Controls.Add(this.statusStrip1);
+            this.Controls.Add(this.mainStatusStrip);
             this.Controls.Add(this.mainSplitContainer);
             this.Name = "BTViewer";
             this.Text = "AIBT Explorer";
@@ -201,6 +212,8 @@ namespace AIBTViewer
             this.mainSplitContainer.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).EndInit();
             this.mainSplitContainer.ResumeLayout(false);
+            this.mainStatusStrip.ResumeLayout(false);
+            this.mainStatusStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -210,7 +223,7 @@ namespace AIBTViewer
 
         private System.Windows.Forms.TreeView behaviorTreeView;
         private System.Windows.Forms.SplitContainer mainSplitContainer;
-        private System.Windows.Forms.StatusStrip statusStrip1;
+        private System.Windows.Forms.StatusStrip mainStatusStrip;
         private System.Windows.Forms.Button removeLayerButton;
         private System.Windows.Forms.Button addLayerButton;
         private System.Windows.Forms.TextBox behaviorTextBox;
@@ -219,6 +232,7 @@ namespace AIBTViewer
         private System.Windows.Forms.TreeView layersTreeView;
         private System.Windows.Forms.ListBox errorListBox;
         private System.Windows.Forms.Label errorLabel;
+        private System.Windows.Forms.ToolStripStatusLabel overviewTooltipStatuslabel;
     }
 }
 

@@ -16,6 +16,11 @@ namespace AIBTViewer
     struct BTPath
     {
         public List<Behavior> Path;
+
+        public override string ToString()
+        {
+            return string.Join("|", Path.Select(b => b.Key));
+        }
     }
 
     public partial class BTViewer : Form
@@ -32,7 +37,9 @@ namespace AIBTViewer
         }
 
         private BehaviorTree BT;
-        private List<LayerInfo> layers = new List<LayerInfo>(); 
+        private List<LayerInfo> layers = new List<LayerInfo>();
+
+        private HashSet<string> expandedPaths = new HashSet<string>();
 
         protected override void OnLoad(EventArgs e)
         {
@@ -68,11 +75,13 @@ namespace AIBTViewer
                 Behavior root;
                 if (BT.Tree.TryGetValue(key, out root))
                 {
-                    var btPath = new BTPath();
-                    btPath.Path = new List<Behavior>();
+                    var btPath = new BTPath { Path = new List<Behavior>() };
                     var newNode = AddNode(btPath, root, behaviorTreeView.Nodes);
                     btPath.Path.Add(root);
                     Expand(newNode, btPath);
+
+                    if (expandedPaths.Contains(newNode.Tag.ToString()))
+                        newNode.Expand();
                 }
             }
             behaviorTreeView.EndUpdate();
@@ -95,6 +104,11 @@ namespace AIBTViewer
                 errorListBox.Hide();
                 errorLabel.Hide();
             }
+
+            overviewTooltipStatuslabel.Text = string.Format("{0} files, {1} nodes", layers.Count(l => l.Enabled),
+                BT.Tree.Count);
+            
+            expandedPaths.Clear();
         }
 
         private string[] PublicRoots = new string[]
@@ -267,41 +281,11 @@ namespace AIBTViewer
 
         private void refreshButton_Click(object sender, EventArgs e)
         {
-            var path = behaviorTreeView.SelectedNode != null ? (BTPath)behaviorTreeView.SelectedNode.Tag : new BTPath();
+            SaveExpandedNodes();
             
             Task.Run(new System.Action(ParseConfig)).Wait();
 
             UpdateBehaviorTreeView();
-
-            if (path.Path != null)
-            {
-                ExpandPath(path);
-            }
-        }
-
-        private void ExpandPath(BTPath path)
-        {
-            var subPath = new BTPath() { Path = new List<Behavior>() };
-
-            var nodeCollection = behaviorTreeView.Nodes;
-            TreeNode selectedNode = null;
-            foreach (var behavior in path.Path)
-            {
-                var node = nodeCollection[behavior.Key];
-                if (node == null)
-                    break;
-                var nodePath = (BTPath) node.Tag;
-                subPath.Path.Add(nodePath.Path[nodePath.Path.Count - 1]);
-
-                selectedNode = node;
-                nodeCollection = node.Nodes;
-                Expand(node, subPath);
-            }
-
-            behaviorTreeView.SelectedNode = selectedNode;
-            if (selectedNode != null)
-                selectedNode.Expand();
-            behaviorTreeView.Select();
         }
 
         private void removeLayerButton_Click(object sender, EventArgs e)
@@ -327,15 +311,29 @@ namespace AIBTViewer
 
             UpdateLayersTreeView();
 
-            var path = behaviorTreeView.SelectedNode != null ? (BTPath)behaviorTreeView.SelectedNode.Tag : new BTPath();
+            SaveExpandedNodes();
 
             Task.Run(new System.Action(ParseConfig)).Wait();
 
             UpdateBehaviorTreeView();
+        }
 
-            if (path.Path != null)
+        private void SaveExpandedNodes()
+        {
+            Queue<TreeNodeCollection> worklist = new Queue<TreeNodeCollection>();
+            expandedPaths.Clear();
+            worklist.Enqueue(behaviorTreeView.Nodes);
+            while (worklist.Count > 0)
             {
-                ExpandPath(path);
+                var nodes = worklist.Dequeue();
+                foreach (TreeNode node in nodes)
+                {
+                    if (node.IsExpanded)
+                    {
+                        expandedPaths.Add(((BTPath) node.Tag).ToString());
+                        worklist.Enqueue(node.Nodes);
+                    }
+                }
             }
         }
 
@@ -345,6 +343,15 @@ namespace AIBTViewer
             {
                 layers[e.Node.Index].Enabled = e.Node.Checked;
                 LayerPathsChanged();
+            }
+        }
+
+        private void behaviorTreeView_AfterExpand(object sender, TreeViewEventArgs e)
+        {
+            foreach (var child in e.Node.Nodes.Cast<TreeNode>())
+            {
+                if (expandedPaths.Contains(child.Tag.ToString()))
+                    child.Expand();
             }
         }
     }
