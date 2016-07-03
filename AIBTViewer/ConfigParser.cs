@@ -34,7 +34,7 @@ namespace AIBTViewer
                         var line = aiConfig.ReadLine();
                         var rawLine = line;
 
-                        while (line.EndsWith(@"\\") && !aiConfig.EndOfStream)
+                        while (line != null && line.EndsWith(@"\\") && !aiConfig.EndOfStream)
                         {
                             line = line.Substring(0, line.Length - 2);
                             var newLine = aiConfig.ReadLine();
@@ -89,56 +89,61 @@ namespace AIBTViewer
                         continue;
                     }
 
-                    if (tokensLower[0] == "behaviors" &&
-                        section.ToLowerInvariant() == "[XComGame.X2AIBTBehaviorTree]".ToLowerInvariant())
+                    if (!String.Equals(section, "[XComGame.X2AIBTBehaviorTree]",
+                        StringComparison.InvariantCultureIgnoreCase))
                     {
-                        var node = new Behavior();
-
-                        int i = 3;
-
-                        while (i < tokens.Length)
-                        {
-                            int index;
-                            switch (tokensLower[i])
-                            {
-                                case "behaviorname":
-                                    node.BehaviorName = tokens[i + 2];
-                                    i += 4;
-                                    break;
-
-                                case "nodetype":
-                                    node.NodeType = tokens[i + 2];
-                                    i += 4;
-                                    break;
-
-                                case "child":
-                                    index = int.Parse(tokens[i + 2]);
-                                    while (node.Child.Count < index + 1)
-                                        node.Child.Add("");
-                                    node.Child[index] = tokens[i + 5];
-                                    i += 7;
-                                    break;
-
-                                case "param":
-                                    index = int.Parse(tokens[i + 2]);
-                                    while (node.Param.Count < index + 1)
-                                        node.Param.Add("");
-                                    node.Param[index] = tokens[i + 5];
-                                    i += 7;
-                                    break;
-
-                                default:
-                                    i++;
-                                    break;
-                            }
-                        }
-
-                        node.RawText = rawLine;
-                        node.FileName = file.FileName;
-                        file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%{0}", node.BehaviorName);
-
-                        BT[node.BehaviorName.ToLowerInvariant()] = node;
+                        continue;
                     }
+
+                    if (tokensLower[0] != "behaviors") 
+                        continue;
+
+                    var node = new Behavior();
+
+                    int i = 3;
+
+                    while (i < tokens.Length)
+                    {
+                        int index;
+                        switch (tokensLower[i])
+                        {
+                            case "behaviorname":
+                                node.BehaviorName = tokens[i + 2];
+                                i += 4;
+                                break;
+
+                            case "nodetype":
+                                node.NodeType = tokens[i + 2];
+                                i += 4;
+                                break;
+
+                            case "child":
+                                index = int.Parse(tokens[i + 2]);
+                                while (node.Child.Count < index + 1)
+                                    node.Child.Add("");
+                                node.Child[index] = tokens[i + 5];
+                                i += 7;
+                                break;
+
+                            case "param":
+                                index = int.Parse(tokens[i + 2]);
+                                while (node.Param.Count < index + 1)
+                                    node.Param.Add("");
+                                node.Param[index] = tokens[i + 5];
+                                i += 7;
+                                break;
+
+                            default:
+                                i++;
+                                break;
+                        }
+                    }
+
+                    node.RawText = rawLine;
+                    node.FileName = file.FileName;
+                    file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%[{0}]", node.BehaviorName);
+
+                    BT[node.Key] = node;
                 }
             }
 

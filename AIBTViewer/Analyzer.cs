@@ -145,73 +145,73 @@ namespace AIBTViewer
 
                 if (!isLast)
                 {
-                    if (behavior.NodeType.ToLowerInvariant() == "selector" && !behavior.TypeLink.Contains(btPath.Path[index + 1]))
+                    if (behavior.TypeLink.Contains(btPath.Path[index + 1]))
+                        continue;
+
+                    switch (behavior.NodeType.ToLowerInvariant())
                     {
-                        foreach (var child in behavior.ChildLink)
-                        {
-                            if (child == btPath.Path[index + 1])
-                                break;
+                        case "selector":
+                            foreach (var child in behavior.ChildLink)
+                            {
+                                if (child == btPath.Path[index + 1])
+                                    break;
 
-                            ShouldShowHandleSequence(child, knownFalse, knownTrue);
-                        }
-                    }
+                                ShouldShowHandleSequence(child, knownFalse, knownTrue);
+                            }
+                            break;
 
-                    if (behavior.NodeType.ToLowerInvariant() == "sequence" && !behavior.TypeLink.Contains(btPath.Path[index + 1]))
-                    {
-                        foreach (var child in behavior.ChildLink)
-                        {
-                            if (child == btPath.Path[index + 1])
-                                break;
+                        case "sequence":
+                            foreach (var child in behavior.ChildLink)
+                            {
+                                if (child == btPath.Path[index + 1])
+                                    break;
 
-                            ShouldShowHandleSequence(child, knownTrue, knownFalse);
-                        }
+                                ShouldShowHandleSequence(child, knownTrue, knownFalse);
+                            }
+                            break;
                     }
                 }
                 else
                 {
-                    while (true)
-                    {
-                        bool escape = true;
-
-                        if (behavior.TypeLink.Count > 0)
-                            return true;
-
-                        if (!ShouldShowHandleSequence(behavior, knownTrue, knownFalse)) return false;
-
-                        if (behavior.NodeType.ToLowerInvariant() == "selector")
-                        {
-                            foreach (var child in behavior.ChildLink)
-                            {
-                                var newChild = GetReplacementNode(child, characterTemplate) ?? child;
-
-                                if (newChild.Annotations.Contains("HasAction"))
-                                    break;
-
-                                if (!ShouldShowHandleSequence(newChild, knownFalse, knownTrue)) return false;
-                            }
-                        }
-
-                        if (behavior.NodeType.ToLowerInvariant() == "sequence")
-                        {
-                            foreach (var child in behavior.ChildLink)
-                            {
-                                var newChild = GetReplacementNode(child, characterTemplate) ?? child;
-
-                                if (newChild.Annotations.Contains("HasAction"))
-                                {
-                                    behavior = child;
-                                    escape = false;
-                                    break;
-                                }
-
-                                if (!ShouldShowHandleSequence(newChild, knownTrue, knownFalse)) return false;
-                            }
-                        }
-
-                        if (escape)
-                            return true;
-                    }
+                    return ShouldShow(behavior, knownTrue, knownFalse, characterTemplate);
                 }
+            }
+
+            return true;
+        }
+
+        private static bool ShouldShow(Behavior behavior, HashSet<string> knownTrue, HashSet<string> knownFalse, string characterTemplate)
+        {
+            if (behavior.TypeLink.Count > 0)
+                return true;
+
+            if (!ShouldShowHandleSequence(behavior, knownTrue, knownFalse)) return false;
+
+            switch (behavior.NodeType.ToLowerInvariant())
+            {
+                case "selector":
+                    foreach (var child in behavior.ChildLink)
+                    {
+                        var newChild = GetReplacementNode(child, characterTemplate) ?? child;
+
+                        if (newChild.Annotations.Contains("HasAction"))
+                            return true;
+
+                        if (!ShouldShowHandleSequence(newChild, knownFalse, knownTrue)) return false;
+                    }
+                    break;
+
+                case "sequence":
+                    foreach (var child in behavior.ChildLink)
+                    {
+                        var newChild = GetReplacementNode(child, characterTemplate) ?? child;
+
+                        if (newChild.Annotations.Contains("HasAction"))
+                            return ShouldShow(child, knownTrue, knownFalse, characterTemplate);
+
+                        if (!ShouldShowHandleSequence(newChild, knownTrue, knownFalse)) return false;
+                    }
+                    break;
             }
 
             return true;
@@ -256,12 +256,13 @@ namespace AIBTViewer
 
         private static Behavior GetReplacementNode(Behavior nextBehavior, string characterTemplate)
         {
-            if (characterTemplate != null && nextBehavior.BehaviorName.StartsWith("::"))
+            if (characterTemplate == null) 
+                return null;
+            
+            if (nextBehavior.BehaviorName.StartsWith("::"))
             {
-                var maybeReplacement =
-                    nextBehavior.TypeLink.FirstOrDefault(
-                        b => b.Key.StartsWith(characterTemplate + "::"));
-                return maybeReplacement;
+                return nextBehavior.TypeLink.FirstOrDefault(
+                    b => b.Key.StartsWith(characterTemplate + "::"));
             }
 
             return null;
@@ -269,10 +270,8 @@ namespace AIBTViewer
 
         private static string GetCharacterTemplate(Behavior behavior)
         {
-            var newTemplate =
-                behavior.BehaviorName.Substring(0,
-                    behavior.BehaviorName.IndexOf("::", StringComparison.InvariantCulture)).ToLowerInvariant();
-            return newTemplate;
+            return behavior.BehaviorName.Substring(0,
+                behavior.BehaviorName.IndexOf("::", StringComparison.InvariantCulture)).ToLowerInvariant();
         }
     }
 }
