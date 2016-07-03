@@ -37,6 +37,8 @@ namespace AIBTViewer
         {
             this.behaviorTreeView = new System.Windows.Forms.TreeView();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
+            this.errorLabel = new System.Windows.Forms.Label();
+            this.errorListBox = new System.Windows.Forms.ListBox();
             this.layersTreeView = new System.Windows.Forms.TreeView();
             this.refreshButton = new System.Windows.Forms.Button();
             this.fileNameLabel = new System.Windows.Forms.Label();
@@ -44,8 +46,6 @@ namespace AIBTViewer
             this.removeLayerButton = new System.Windows.Forms.Button();
             this.addLayerButton = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.errorListBox = new System.Windows.Forms.ListBox();
-            this.errorLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
@@ -54,22 +54,28 @@ namespace AIBTViewer
             // 
             // behaviorTreeView
             // 
+            this.behaviorTreeView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.behaviorTreeView.Location = new System.Drawing.Point(3, 3);
             this.behaviorTreeView.Name = "behaviorTreeView";
-            this.behaviorTreeView.Size = new System.Drawing.Size(286, 463);
+            this.behaviorTreeView.Size = new System.Drawing.Size(450, 643);
             this.behaviorTreeView.TabIndex = 0;
             this.behaviorTreeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.behaviorTreeView_AfterSelect);
             this.behaviorTreeView.Layout += new System.Windows.Forms.LayoutEventHandler(this.behaviorTreeView_Layout);
             // 
             // mainSplitContainer
             // 
+            this.mainSplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.mainSplitContainer.BackColor = System.Drawing.SystemColors.Control;
             this.mainSplitContainer.Location = new System.Drawing.Point(-2, -1);
             this.mainSplitContainer.Name = "mainSplitContainer";
             // 
             // mainSplitContainer.Panel1
             // 
             this.mainSplitContainer.Panel1.Controls.Add(this.behaviorTreeView);
-            this.mainSplitContainer.Panel1.Layout += new System.Windows.Forms.LayoutEventHandler(this.splitContainer1_Panel1_Layout);
             // 
             // mainSplitContainer.Panel2
             // 
@@ -81,18 +87,42 @@ namespace AIBTViewer
             this.mainSplitContainer.Panel2.Controls.Add(this.behaviorTextBox);
             this.mainSplitContainer.Panel2.Controls.Add(this.removeLayerButton);
             this.mainSplitContainer.Panel2.Controls.Add(this.addLayerButton);
-            this.mainSplitContainer.Panel2.Layout += new System.Windows.Forms.LayoutEventHandler(this.mainSplitContainer_Panel2_Layout);
-            this.mainSplitContainer.Size = new System.Drawing.Size(952, 471);
-            this.mainSplitContainer.SplitterDistance = 451;
+            this.mainSplitContainer.Size = new System.Drawing.Size(964, 646);
+            this.mainSplitContainer.SplitterDistance = 456;
             this.mainSplitContainer.TabIndex = 1;
+            // 
+            // errorLabel
+            // 
+            this.errorLabel.AutoSize = true;
+            this.errorLabel.Location = new System.Drawing.Point(9, 295);
+            this.errorLabel.Name = "errorLabel";
+            this.errorLabel.Size = new System.Drawing.Size(34, 13);
+            this.errorLabel.TabIndex = 8;
+            this.errorLabel.Text = "Errors";
+            this.errorLabel.Visible = false;
+            // 
+            // errorListBox
+            // 
+            this.errorListBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.errorListBox.FormattingEnabled = true;
+            this.errorListBox.HorizontalScrollbar = true;
+            this.errorListBox.Location = new System.Drawing.Point(12, 311);
+            this.errorListBox.Name = "errorListBox";
+            this.errorListBox.Size = new System.Drawing.Size(488, 316);
+            this.errorListBox.TabIndex = 7;
+            this.errorListBox.Visible = false;
             // 
             // layersTreeView
             // 
+            this.layersTreeView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.layersTreeView.CheckBoxes = true;
             this.layersTreeView.Location = new System.Drawing.Point(121, 7);
             this.layersTreeView.Name = "layersTreeView";
             this.layersTreeView.ShowRootLines = false;
-            this.layersTreeView.Size = new System.Drawing.Size(372, 81);
+            this.layersTreeView.Size = new System.Drawing.Size(379, 81);
             this.layersTreeView.TabIndex = 6;
             this.layersTreeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.layersTreeView_AfterCheck);
             // 
@@ -117,13 +147,15 @@ namespace AIBTViewer
             // 
             // behaviorTextBox
             // 
+            this.behaviorTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.behaviorTextBox.BackColor = System.Drawing.SystemColors.ControlLightLight;
             this.behaviorTextBox.Location = new System.Drawing.Point(12, 116);
             this.behaviorTextBox.Multiline = true;
             this.behaviorTextBox.Name = "behaviorTextBox";
             this.behaviorTextBox.ReadOnly = true;
             this.behaviorTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.behaviorTextBox.Size = new System.Drawing.Size(481, 172);
+            this.behaviorTextBox.Size = new System.Drawing.Size(488, 172);
             this.behaviorTextBox.TabIndex = 3;
             // 
             // removeLayerButton
@@ -154,26 +186,6 @@ namespace AIBTViewer
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
             // 
-            // errorListBox
-            // 
-            this.errorListBox.FormattingEnabled = true;
-            this.errorListBox.HorizontalScrollbar = true;
-            this.errorListBox.Location = new System.Drawing.Point(12, 311);
-            this.errorListBox.Name = "errorListBox";
-            this.errorListBox.Size = new System.Drawing.Size(120, 95);
-            this.errorListBox.TabIndex = 7;
-            this.errorListBox.Visible = false;
-            // 
-            // errorLabel
-            // 
-            this.errorLabel.AutoSize = true;
-            this.errorLabel.Location = new System.Drawing.Point(9, 295);
-            this.errorLabel.Name = "errorLabel";
-            this.errorLabel.Size = new System.Drawing.Size(34, 13);
-            this.errorLabel.TabIndex = 8;
-            this.errorLabel.Text = "Errors";
-            this.errorLabel.Visible = false;
-            // 
             // BTViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -183,7 +195,6 @@ namespace AIBTViewer
             this.Controls.Add(this.mainSplitContainer);
             this.Name = "BTViewer";
             this.Text = "AIBT Explorer";
-            this.Layout += new System.Windows.Forms.LayoutEventHandler(this.BTViewer_Layout);
             this.mainSplitContainer.Panel1.ResumeLayout(false);
             this.mainSplitContainer.Panel2.ResumeLayout(false);
             this.mainSplitContainer.Panel2.PerformLayout();

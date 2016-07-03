@@ -222,21 +222,9 @@ namespace AIBTViewer
             analyzer.Analyze(BT);
         }
 
-        private void BTViewer_Layout(object sender, LayoutEventArgs e)
-        {
-            mainSplitContainer.Bounds = DisplayRectangle;
-            mainSplitContainer.Height -= statusStrip1.Height;
-        }
-
         private void behaviorTreeView_Layout(object sender, LayoutEventArgs e)
         {
             behaviorTreeView.Scrollable = true;
-        }
-
-        private void splitContainer1_Panel1_Layout(object sender, LayoutEventArgs e)
-        {
-            behaviorTreeView.Bounds = mainSplitContainer.Panel1.DisplayRectangle;
-
         }
 
         private void addLayerButton_Click(object sender, EventArgs e)
@@ -249,16 +237,6 @@ namespace AIBTViewer
 
                 LayerPathsChanged();
             }
-        }
-
-        private void mainSplitContainer_Panel2_Layout(object sender, LayoutEventArgs e)
-        {
-            layersTreeView.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - layersTreeView.Left - 12;
-            
-            behaviorTextBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - behaviorTextBox.Left - 12;
-
-            errorListBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - errorListBox.Left - 12;
-            errorListBox.Height = mainSplitContainer.Panel2.DisplayRectangle.Height - errorListBox.Top - 12;
         }
 
         private void behaviorTreeView_AfterSelect(object sender, TreeViewEventArgs e)
