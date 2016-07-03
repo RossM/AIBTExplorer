@@ -18,17 +18,17 @@ namespace AIBTViewer
         public List<Behavior> Path;
     }
 
-    class LayerInfo
-    {
-        public string Path;
-        public bool Enabled;
-    }
-
     public partial class BTViewer : Form
     {
         public BTViewer()
         {
             InitializeComponent();
+        }
+
+        class LayerInfo
+        {
+            public string Path;
+            public bool Enabled;
         }
 
         private BehaviorTree BT;
@@ -76,6 +76,22 @@ namespace AIBTViewer
                 }
             }
             behaviorTreeView.EndUpdate();
+
+            if (configParser.Errors.Count > 0)
+            {
+                errorListBox.BeginUpdate();
+                errorListBox.Items.Clear();
+                foreach (var error in configParser.Errors)
+                    errorListBox.Items.Add(error);
+
+                errorListBox.Show();
+                errorLabel.Show();
+            }
+            else
+            {
+                errorListBox.Hide();
+                errorLabel.Hide();
+            }
         }
 
         private string[] PublicRoots = new string[]
@@ -84,6 +100,8 @@ namespace AIBTViewer
             "panickedroot",
             "genericscamperroot",
         };
+
+        private ConfigParser configParser;
 
         private void UpdateLayersTreeView()
         {
@@ -193,9 +211,8 @@ namespace AIBTViewer
 
         private void ParseConfig()
         {
-
-            var config = new ConfigParser();
-            BT = config.ReadData(layers.Where(l => l.Enabled).Select(l => l.Path));
+            configParser = new ConfigParser();
+            BT = configParser.ReadData(layers.Where(l => l.Enabled).Select(l => l.Path));
 
             Analyzer.Analyze(BT);
         }
@@ -232,7 +249,11 @@ namespace AIBTViewer
         private void mainSplitContainer_Panel2_Layout(object sender, LayoutEventArgs e)
         {
             layersTreeView.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - layersTreeView.Left - 12;
+            
             behaviorTextBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - behaviorTextBox.Left - 12;
+
+            errorListBox.Width = mainSplitContainer.Panel2.DisplayRectangle.Width - errorListBox.Left - 12;
+            errorListBox.Height = mainSplitContainer.Panel2.DisplayRectangle.Height - errorListBox.Top - 12;
         }
 
         private void behaviorTreeView_AfterSelect(object sender, TreeViewEventArgs e)
@@ -271,28 +292,33 @@ namespace AIBTViewer
 
             if (path.Path != null)
             {
-                var subPath = new BTPath() { Path = new List<Behavior>() };
-
-                var nodeCollection = behaviorTreeView.Nodes;
-                TreeNode selectedNode = null;
-                foreach (var behavior in path.Path)
-                {
-                    var node = nodeCollection[behavior.Key];
-                    if (node == null)
-                        break;
-                    var nodePath = (BTPath) node.Tag;
-                    subPath.Path.Add(nodePath.Path[nodePath.Path.Count - 1]);
-
-                    selectedNode = node;
-                    nodeCollection = node.Nodes;
-                    Expand(node, subPath);
-                }
-
-                behaviorTreeView.SelectedNode = selectedNode;
-                if (selectedNode != null)
-                    selectedNode.Expand();
-                behaviorTreeView.Select();
+                ExpandPath(path);
             }
+        }
+
+        private void ExpandPath(BTPath path)
+        {
+            var subPath = new BTPath() { Path = new List<Behavior>() };
+
+            var nodeCollection = behaviorTreeView.Nodes;
+            TreeNode selectedNode = null;
+            foreach (var behavior in path.Path)
+            {
+                var node = nodeCollection[behavior.Key];
+                if (node == null)
+                    break;
+                var nodePath = (BTPath) node.Tag;
+                subPath.Path.Add(nodePath.Path[nodePath.Path.Count - 1]);
+
+                selectedNode = node;
+                nodeCollection = node.Nodes;
+                Expand(node, subPath);
+            }
+
+            behaviorTreeView.SelectedNode = selectedNode;
+            if (selectedNode != null)
+                selectedNode.Expand();
+            behaviorTreeView.Select();
         }
 
         private void removeLayerButton_Click(object sender, EventArgs e)
@@ -318,9 +344,16 @@ namespace AIBTViewer
 
             UpdateLayersTreeView();
 
+            var path = behaviorTreeView.SelectedNode != null ? (BTPath)behaviorTreeView.SelectedNode.Tag : new BTPath();
+
             Task.Run(new System.Action(ParseConfig)).Wait();
 
             UpdateBehaviorTreeView();
+
+            if (path.Path != null)
+            {
+                ExpandPath(path);
+            }
         }
 
         private void layersTreeView_AfterCheck(object sender, TreeViewEventArgs e)

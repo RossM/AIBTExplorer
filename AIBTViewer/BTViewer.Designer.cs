@@ -44,6 +44,8 @@ namespace AIBTViewer
             this.removeLayerButton = new System.Windows.Forms.Button();
             this.addLayerButton = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.errorListBox = new System.Windows.Forms.ListBox();
+            this.errorLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
@@ -71,6 +73,8 @@ namespace AIBTViewer
             // 
             // mainSplitContainer.Panel2
             // 
+            this.mainSplitContainer.Panel2.Controls.Add(this.errorLabel);
+            this.mainSplitContainer.Panel2.Controls.Add(this.errorListBox);
             this.mainSplitContainer.Panel2.Controls.Add(this.layersTreeView);
             this.mainSplitContainer.Panel2.Controls.Add(this.refreshButton);
             this.mainSplitContainer.Panel2.Controls.Add(this.fileNameLabel);
@@ -150,6 +154,26 @@ namespace AIBTViewer
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
             // 
+            // errorListBox
+            // 
+            this.errorListBox.FormattingEnabled = true;
+            this.errorListBox.HorizontalScrollbar = true;
+            this.errorListBox.Location = new System.Drawing.Point(12, 311);
+            this.errorListBox.Name = "errorListBox";
+            this.errorListBox.Size = new System.Drawing.Size(120, 95);
+            this.errorListBox.TabIndex = 7;
+            this.errorListBox.Visible = false;
+            // 
+            // errorLabel
+            // 
+            this.errorLabel.AutoSize = true;
+            this.errorLabel.Location = new System.Drawing.Point(9, 295);
+            this.errorLabel.Name = "errorLabel";
+            this.errorLabel.Size = new System.Drawing.Size(34, 13);
+            this.errorLabel.TabIndex = 8;
+            this.errorLabel.Text = "Errors";
+            this.errorLabel.Visible = false;
+            // 
             // BTViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -181,6 +205,8 @@ namespace AIBTViewer
         private System.Windows.Forms.Label fileNameLabel;
         private System.Windows.Forms.Button refreshButton;
         private System.Windows.Forms.TreeView layersTreeView;
+        private System.Windows.Forms.ListBox errorListBox;
+        private System.Windows.Forms.Label errorLabel;
     }
 }
 

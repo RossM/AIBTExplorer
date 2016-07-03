@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using AIBTViewer;
 
 namespace AIBTViewer
@@ -12,6 +13,8 @@ namespace AIBTViewer
     {
         public Dictionary<string, Behavior> BT = new Dictionary<string, Behavior>();
         public List<FileData> files = new List<FileData>();
+
+        public List<string> Errors = new List<string>(); 
         
         private Token[] lineTokens;
         private int currentTokenIndex;
@@ -28,7 +31,7 @@ namespace AIBTViewer
         public struct Token
         {
             public string Text;
-            public int StartCharNumber;
+            public int StartCharNumber, StartLineNumber;
         }
 
         public BehaviorTree ReadData(IEnumerable<string> paths)
@@ -91,7 +94,7 @@ namespace AIBTViewer
                 for (lineIndex = 0; lineIndex < file.RawLines.Count; lineIndex++)
                 {
                     var rawLine = file.RawLines[lineIndex];
-                    var line = rawLine.Replace("\\\\\n", "");
+                    var line = rawLine;
 
                     file.OriginalLines.Add(rawLine);
 
@@ -189,9 +192,21 @@ namespace AIBTViewer
 
                                 break;
 
+                            case "intent":
+                                EatToken();
+                                EatToken("=");
+                                EatToken();
+
+                                break;
+
                             default:
                                 // Unexpected token!
+                                ParseError("field name");
                                 EatToken();
+
+                                while (currentTokenIndex < lineTokens.Length && CurrentToken != "," && CurrentToken != ")")
+                                    EatToken();
+
                                 break;
                         }
 
@@ -238,7 +253,53 @@ namespace AIBTViewer
 
         void EatToken(params string[] expected)
         {
+            if (currentTokenIndex >= lineTokens.Length)
+            {
+                ParseError(string.Format("\"{0}\"", expected[0]));
+                return;
+            }
+            
+            if (expected.All(s => !String.Equals(s, CurrentToken, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                ParseError(string.Format("\"{0}\"", expected[0]));
+            }
+
             currentTokenIndex++;
+        }
+
+        private void ParseError(string expected)
+        {
+            string prevToken = currentTokenIndex > 0
+                ? string.Format("\"{0}\"", lineTokens[currentTokenIndex - 1].Text)
+                : "beginning of line";
+            string curToken = currentTokenIndex < lineTokens.Length
+                ? string.Format("\"{0}\"", lineTokens[currentTokenIndex].Text)
+                : "end of line";
+
+            int startLineNumber;
+            if (currentTokenIndex >= 0 && currentTokenIndex < lineTokens.Length)
+                startLineNumber = lineTokens[currentTokenIndex].StartLineNumber;
+            else if (currentTokenIndex >= 1)
+                startLineNumber = lineTokens[currentTokenIndex - 1].StartLineNumber;
+            else
+                startLineNumber = files[fileIndex].OriginalLineNumbers[lineIndex];
+
+            int startCharNumber;
+            if (currentTokenIndex >= 0 && currentTokenIndex < lineTokens.Length)
+                startCharNumber = lineTokens[currentTokenIndex].StartCharNumber;
+            else if (currentTokenIndex >= 1)
+                startCharNumber = lineTokens[currentTokenIndex - 1].StartCharNumber +
+                                  lineTokens[currentTokenIndex - 1].Text.Length;
+            else
+                startCharNumber = 0;
+
+            Errors.Add(string.Format("{0} - ({1},{2}) : Expected {3} after {4} but got {5} instead",
+                files[fileIndex].FileName,
+                startLineNumber + 1,
+                startCharNumber + 1,
+                expected,
+                prevToken,
+                curToken));
         }
 
         static bool IsTokenChar(char c)
@@ -248,37 +309,62 @@ namespace AIBTViewer
             return true;
         }
 
-        static IEnumerable<Token> LexConfig(string line)
+        IEnumerable<Token> LexConfig(string line)
         {
             string token = "";
 
+            int curLine = files[fileIndex].OriginalLineNumbers[lineIndex];
+            int curChar = 0;
+
             for (int lineChar = 0; lineChar < line.Length; )
             {
-                int startChar = lineChar;
+                int startChar = curChar;
+                int startLine = curLine;
+
+                if (lineChar + 2 < line.Length && line[lineChar] == '\\' && line[lineChar + 1] == '\\' &&
+                    line[lineChar + 2] == '\n')
+                {
+                    lineChar += 3;
+                    curChar = 0;
+                    curLine++;
+                    continue;
+                }
+                
                 if (line[lineChar] == ';')
                     yield break;
-                else if (IsTokenChar(line[lineChar]))
+                
+                if (IsTokenChar(line[lineChar]))
                 {
                     while (lineChar < line.Length && IsTokenChar(line[lineChar]))
+                    {
                         token += line[lineChar++];
-                    yield return new Token { Text = token, StartCharNumber = startChar };
+                        curChar++;
+                    }
+                    yield return new Token { Text = token, StartCharNumber = startChar, StartLineNumber = startLine };
                     token = "";
+                    continue;
                 }
-                else if (line[lineChar] == '"')
+                
+                if (line[lineChar] == '"')
                 {
                     lineChar++;
+                    curChar++;
                     while (lineChar < line.Length && line[lineChar] != '"')
+                    {
                         token += line[lineChar++];
+                        curChar++;
+                    }
                     lineChar++;
-                    yield return new Token { Text = token, StartCharNumber = startChar };
+                    curChar++;
+                    yield return new Token { Text = token, StartCharNumber = startChar, StartLineNumber = startLine };
                     token = "";
+                    continue;
                 }
-                else
-                {
-                    if (!char.IsWhiteSpace(line[lineChar]))
-                        yield return new Token { Text = line[lineChar].ToString(), StartCharNumber = startChar };
-                    lineChar++;
-                }
+
+                if (!char.IsWhiteSpace(line[lineChar]))
+                    yield return new Token { Text = line[lineChar].ToString(), StartCharNumber = startChar, StartLineNumber = startLine };
+                lineChar++;
+                curChar++;
             }
         }
 
