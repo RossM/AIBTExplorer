@@ -248,7 +248,7 @@ namespace AIBTViewer
             }
 
             behaviorTextBox.Lines = behavior.RawText.Split('\n');
-            fileNameLabel.Text = FileShortName(behavior.FileName);
+            fileNameLabel.Text = string.Format("{0} : {1}", FileShortName(behavior.FileName), behavior.OriginalLineNumber + 1);
         }
 
         private static string FileShortName(string fileName)

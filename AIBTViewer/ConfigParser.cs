@@ -13,13 +13,22 @@ namespace AIBTViewer
         public Dictionary<string, Behavior> BT = new Dictionary<string, Behavior>();
         public List<FileData> files = new List<FileData>();
         
-        private string[] lineTokens;
+        private Token[] lineTokens;
         private int currentTokenIndex;
+        private int lineIndex;
+        private int fileIndex;
 
         public struct FileData
         {
             public List<string> RawLines, OriginalLines;
+            public List<int> OriginalLineNumbers; 
             public string FileName;
+        }
+
+        public struct Token
+        {
+            public string Text;
+            public int StartCharNumber;
         }
 
         public BehaviorTree ReadData(IEnumerable<string> paths)
@@ -28,14 +37,25 @@ namespace AIBTViewer
 
             foreach (var path in paths)
             {
-                var file = new FileData { FileName = path, RawLines = new List<string>(), OriginalLines = new List<string>() };
+                var file = new FileData
+                {
+                    FileName = path,
+                    RawLines = new List<string>(),
+                    OriginalLines = new List<string>(),
+                    OriginalLineNumbers = new List<int>()
+                };
+
+                int originalLineNumber = 0;
 
                 using (var aiConfig = File.OpenText(path))
                 {
                     while (!aiConfig.EndOfStream)
                     {
+                        file.OriginalLineNumbers.Add(originalLineNumber);
+
                         var line = aiConfig.ReadLine();
                         var rawLine = line;
+                        originalLineNumber++;
 
                         while (line != null && line.EndsWith(@"\\") && !aiConfig.EndOfStream)
                         {
@@ -43,6 +63,7 @@ namespace AIBTViewer
                             var newLine = aiConfig.ReadLine();
                             line += newLine;
                             rawLine += "\n" + newLine;
+                            originalLineNumber++;
                         }
 
                         file.RawLines.Add(rawLine);
@@ -64,10 +85,12 @@ namespace AIBTViewer
             }
 
             string section = "";
-            foreach (var file in files)
+            for (fileIndex = 0; fileIndex < files.Count; fileIndex++)
             {
-                foreach (var rawLine in file.RawLines)
+                var file = files[fileIndex];
+                for (lineIndex = 0; lineIndex < file.RawLines.Count; lineIndex++)
                 {
+                    var rawLine = file.RawLines[lineIndex];
                     var line = rawLine.Replace("\\\\\n", "");
 
                     file.OriginalLines.Add(rawLine);
@@ -88,7 +111,7 @@ namespace AIBTViewer
 
                     if (CurrentToken == "[")
                     {
-                        section = string.Join("", lineTokens);
+                        section = string.Join("", lineTokens.Select(t => t.Text));
                         continue;
                     }
 
@@ -98,7 +121,7 @@ namespace AIBTViewer
                         continue;
                     }
 
-                    if (CurrentToken.ToLowerInvariant() != "behaviors") 
+                    if (CurrentToken.ToLowerInvariant() != "behaviors")
                         continue;
 
                     var node = new Behavior();
@@ -133,13 +156,13 @@ namespace AIBTViewer
                             case "child":
                                 EatToken();
                                 EatToken("[");
-                                
+
                                 index = int.Parse(CurrentToken);
                                 EatToken();
 
                                 while (node.Child.Count < index + 1)
                                     node.Child.Add("");
-                                
+
                                 EatToken("]");
                                 EatToken("=");
 
@@ -157,13 +180,13 @@ namespace AIBTViewer
 
                                 while (node.Param.Count < index + 1)
                                     node.Param.Add("");
-                                
+
                                 EatToken("]");
                                 EatToken("=");
 
                                 node.Param[index] = CurrentToken;
                                 EatToken();
-                                
+
                                 break;
 
                             default:
@@ -190,6 +213,7 @@ namespace AIBTViewer
 
                     node.RawText = rawLine;
                     node.FileName = file.FileName;
+                    node.OriginalLineNumber = file.OriginalLineNumbers[file.OriginalLines.Count - 1];
                     file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%[{0}]", node.BehaviorName);
 
                     BT[node.Key] = node;
@@ -203,7 +227,7 @@ namespace AIBTViewer
         {
             get
             {
-                return currentTokenIndex >= lineTokens.Length ? null : lineTokens[currentTokenIndex];
+                return currentTokenIndex >= lineTokens.Length ? null : lineTokens[currentTokenIndex].Text;
             }
         }
 
@@ -224,35 +248,36 @@ namespace AIBTViewer
             return true;
         }
 
-        static IEnumerable<String> LexConfig(string line)
+        static IEnumerable<Token> LexConfig(string line)
         {
             string token = "";
 
-            for (int i = 0; i < line.Length; )
+            for (int lineChar = 0; lineChar < line.Length; )
             {
-                if (line[i] == ';')
+                int startChar = lineChar;
+                if (line[lineChar] == ';')
                     yield break;
-                else if (IsTokenChar(line[i]))
+                else if (IsTokenChar(line[lineChar]))
                 {
-                    while (i < line.Length && IsTokenChar(line[i]))
-                        token += line[i++];
-                    yield return token;
+                    while (lineChar < line.Length && IsTokenChar(line[lineChar]))
+                        token += line[lineChar++];
+                    yield return new Token { Text = token, StartCharNumber = startChar };
                     token = "";
                 }
-                else if (line[i] == '"')
+                else if (line[lineChar] == '"')
                 {
-                    i++;
-                    while (i < line.Length && line[i] != '"')
-                        token += line[i++];
-                    i++;
-                    yield return token;
+                    lineChar++;
+                    while (lineChar < line.Length && line[lineChar] != '"')
+                        token += line[lineChar++];
+                    lineChar++;
+                    yield return new Token { Text = token, StartCharNumber = startChar };
                     token = "";
                 }
                 else
                 {
-                    if (!char.IsWhiteSpace(line[i]))
-                        yield return line[i].ToString();
-                    i++;
+                    if (!char.IsWhiteSpace(line[lineChar]))
+                        yield return new Token { Text = line[lineChar].ToString(), StartCharNumber = startChar };
+                    lineChar++;
                 }
             }
         }

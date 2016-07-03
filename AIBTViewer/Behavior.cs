@@ -14,6 +14,7 @@ namespace AIBTViewer
         public string NodeType;
         public string RawText;
         public string FileName;
+        public int OriginalLineNumber;
         public List<string> Child = new List<string>();
         public List<string> Param = new List<string>();
         public List<Behavior> ChildLink = new List<Behavior>();
