@@ -278,6 +278,11 @@ namespace AIBTViewer
             if (filePathIndex > 0 && filePathParts[filePathIndex].ToLowerInvariant() == "config")
                 filePathIndex--;
 
+            var shortPath = string.Join("\\", filePathParts.Take(filePathIndex + 1));
+            var files = Directory.GetFiles(shortPath, "*.XComMod");
+            if (files.Length > 0)
+                return Path.GetFileNameWithoutExtension(files[0]);
+
             return filePathParts[filePathIndex];
         }
 
