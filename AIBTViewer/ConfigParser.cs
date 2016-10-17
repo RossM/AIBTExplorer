@@ -231,6 +231,9 @@ namespace AIBTViewer
                     node.OriginalLineNumber = file.OriginalLineNumbers[file.OriginalLines.Count - 1];
                     file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%[{0}]", node.BehaviorName);
 
+                    if (node.BehaviorName == null)
+                        continue;
+
                     BT[node.Key] = node;
                 }
             }

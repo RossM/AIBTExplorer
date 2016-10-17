@@ -20,7 +20,7 @@ namespace AIBTViewer
         public List<Behavior> ChildLink = new List<Behavior>();
         public List<Behavior> TypeLink = new List<Behavior>(); 
         public List<Behavior> Parent = new List<Behavior>();
-        public string Key { get { return BehaviorName.ToLowerInvariant(); } }
+        public string Key { get { return BehaviorName != null ? BehaviorName.ToLowerInvariant() : null; } }
 
         public List<string> Annotations = new List<string>();
     }
