@@ -37,6 +37,8 @@ namespace AIBTViewer
         public BehaviorTree ReadData(IEnumerable<string> paths)
         {
             var cancelledLines = new List<string>();
+            var removedBehaviors = new List<string>();
+            var newBehaviors = new Dictionary<string, Behavior>();
 
             foreach (var path in paths)
             {
@@ -118,127 +120,184 @@ namespace AIBTViewer
                         continue;
                     }
 
-                    if (!String.Equals(section, "[XComGame.X2AIBTBehaviorTree]",
-                        StringComparison.InvariantCultureIgnoreCase))
+                    string property = CurrentToken.ToLowerInvariant();
+                    Behavior node;
+                    switch (property)
                     {
-                        continue;
-                    }
+                        case "behaviors":
+                            if (!String.Equals(section, "[XComGame.X2AIBTBehaviorTree]",
+                                StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                continue;
+                            }
 
-                    if (CurrentToken.ToLowerInvariant() != "behaviors")
-                        continue;
+                            EatToken("behaviors");
+                            EatToken("=");
 
-                    var node = new Behavior();
+                            node = ParseBehavior();
 
-                    EatToken("behaviors");
-                    EatToken("=");
-                    EatToken("(");
+                            node.RawText = rawLine;
+                            node.FileName = file.FileName;
+                            node.OriginalLineNumber = file.OriginalLineNumbers[file.OriginalLines.Count - 1];
+                            file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%[{0}]", node.BehaviorName);
 
-                    while (currentTokenIndex < lineTokens.Length)
-                    {
-                        int index;
-                        switch (CurrentToken.ToLowerInvariant())
-                        {
-                            case "behaviorname":
-                                EatToken();
-                                EatToken("=");
+                            if (node.BehaviorName != null)
+                                BT[node.Key] = node;
+                            break;
 
-                                node.BehaviorName = CurrentToken;
-                                EatToken();
+                        case "newbehaviors":
+                            if (!String.Equals(section, "[LW_Overhaul.UIScreenListener_Shell]",
+                                StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                continue;
+                            }
 
-                                break;
+                            EatToken("newbehaviors");
+                            EatToken("=");
 
-                            case "nodetype":
-                                EatToken();
-                                EatToken("=");
+                            node = ParseBehavior();
 
-                                node.NodeType = CurrentToken;
-                                EatToken();
+                            node.RawText = rawLine;
+                            node.FileName = file.FileName;
+                            node.OriginalLineNumber = file.OriginalLineNumbers[file.OriginalLines.Count - 1];
+                            file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%[{0}]", node.BehaviorName);
 
-                                break;
+                            if (node.BehaviorName != null)
+                                newBehaviors[node.Key] = node;
+                            break;
 
-                            case "child":
-                                EatToken();
-                                EatToken("[");
+                        case "behaviorremovals":
+                            if (!String.Equals(section, "[LW_Overhaul.UIScreenListener_Shell]",
+                                StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                continue;
+                            }
 
-                                index = int.Parse(CurrentToken);
-                                EatToken();
+                            EatToken("behaviorremovals");
+                            EatToken("=");
 
-                                while (node.Child.Count < index + 1)
-                                    node.Child.Add("");
-
-                                EatToken("]");
-                                EatToken("=");
-
-                                node.Child[index] = CurrentToken;
-                                EatToken();
-
-                                break;
-
-                            case "param":
-                                EatToken();
-                                EatToken("[");
-
-                                index = int.Parse(CurrentToken);
-                                EatToken();
-
-                                while (node.Param.Count < index + 1)
-                                    node.Param.Add("");
-
-                                EatToken("]");
-                                EatToken("=");
-
-                                node.Param[index] = CurrentToken;
-                                EatToken();
-
-                                break;
-
-                            case "intent":
-                                EatToken();
-                                EatToken("=");
-                                EatToken();
-
-                                break;
-
-                            default:
-                                // Unexpected token!
-                                ParseError("field name");
-                                EatToken();
-
-                                while (currentTokenIndex < lineTokens.Length && CurrentToken != "," && CurrentToken != ")")
-                                    EatToken();
-
-                                break;
-                        }
-
-                        if (CurrentToken == ")")
-                        {
+                            removedBehaviors.Add(CurrentToken);
                             EatToken();
                             break;
-                        }
-
-                        EatToken(",", ")");
-
-                        // Allow an optional "," before the closing ")"
-                        if (CurrentToken == ")")
-                        {
-                            EatToken();
-                            break;
-                        }
+                        
+                        default:
+                            continue;
                     }
-
-                    node.RawText = rawLine;
-                    node.FileName = file.FileName;
-                    node.OriginalLineNumber = file.OriginalLineNumbers[file.OriginalLines.Count - 1];
-                    file.OriginalLines[file.OriginalLines.Count - 1] = string.Format("%[{0}]", node.BehaviorName);
-
-                    if (node.BehaviorName == null)
-                        continue;
-
-                    BT[node.Key] = node;
                 }
             }
 
+            foreach (var behaviorName in removedBehaviors)
+            {
+                BT.Remove(behaviorName);
+            }
+
+            foreach (var newBehavior in newBehaviors)
+            {
+                BT[newBehavior.Key] = newBehavior.Value;
+            }
+
             return new BehaviorTree(BT);
+        }
+
+        private Behavior ParseBehavior()
+        {
+            var node = new Behavior();
+
+            EatToken("(");
+
+            while (currentTokenIndex < lineTokens.Length)
+            {
+                int index;
+                switch (CurrentToken.ToLowerInvariant())
+                {
+                    case "behaviorname":
+                        EatToken();
+                        EatToken("=");
+
+                        node.BehaviorName = CurrentToken;
+                        EatToken();
+
+                        break;
+
+                    case "nodetype":
+                        EatToken();
+                        EatToken("=");
+
+                        node.NodeType = CurrentToken;
+                        EatToken();
+
+                        break;
+
+                    case "child":
+                        EatToken();
+                        EatToken("[");
+
+                        index = int.Parse(CurrentToken);
+                        EatToken();
+
+                        while (node.Child.Count < index + 1)
+                            node.Child.Add("");
+
+                        EatToken("]");
+                        EatToken("=");
+
+                        node.Child[index] = CurrentToken;
+                        EatToken();
+
+                        break;
+
+                    case "param":
+                        EatToken();
+                        EatToken("[");
+
+                        index = int.Parse(CurrentToken);
+                        EatToken();
+
+                        while (node.Param.Count < index + 1)
+                            node.Param.Add("");
+
+                        EatToken("]");
+                        EatToken("=");
+
+                        node.Param[index] = CurrentToken;
+                        EatToken();
+
+                        break;
+
+                    case "intent":
+                        EatToken();
+                        EatToken("=");
+                        EatToken();
+
+                        break;
+
+                    default:
+                        // Unexpected token!
+                        ParseError("field name");
+                        EatToken();
+
+                        while (currentTokenIndex < lineTokens.Length && CurrentToken != "," && CurrentToken != ")")
+                            EatToken();
+
+                        break;
+                }
+
+                if (CurrentToken == ")")
+                {
+                    EatToken();
+                    break;
+                }
+
+                EatToken(",", ")");
+
+                // Allow an optional "," before the closing ")"
+                if (CurrentToken == ")")
+                {
+                    EatToken();
+                    break;
+                }
+            }
+            return node;
         }
 
         string CurrentToken
