@@ -52,30 +52,37 @@ namespace AIBTViewer
 
                 int originalLineNumber = 0;
 
-                using (var aiConfig = File.OpenText(path))
+                try
                 {
-                    while (!aiConfig.EndOfStream)
+                    using (var aiConfig = File.OpenText(path))
                     {
-                        file.OriginalLineNumbers.Add(originalLineNumber);
-
-                        var line = aiConfig.ReadLine();
-                        var rawLine = line;
-                        originalLineNumber++;
-
-                        while (line != null && line.EndsWith(@"\\") && !aiConfig.EndOfStream)
+                        while (!aiConfig.EndOfStream)
                         {
-                            line = line.Substring(0, line.Length - 2);
-                            var newLine = aiConfig.ReadLine();
-                            line += newLine;
-                            rawLine += "\n" + newLine;
+                            file.OriginalLineNumbers.Add(originalLineNumber);
+
+                            var line = aiConfig.ReadLine();
+                            var rawLine = line;
                             originalLineNumber++;
+
+                            while (line != null && line.EndsWith(@"\\") && !aiConfig.EndOfStream)
+                            {
+                                line = line.Substring(0, line.Length - 2);
+                                var newLine = aiConfig.ReadLine();
+                                line += newLine;
+                                rawLine += "\n" + newLine;
+                                originalLineNumber++;
+                            }
+
+                            file.RawLines.Add(rawLine);
                         }
-
-                        file.RawLines.Add(rawLine);
                     }
-                }
 
-                files.Add(file);
+                    files.Add(file);
+                }
+                catch (System.IO.IOException)
+                {
+                    // Ignore
+                }
             }
 
             foreach (var file in files)
